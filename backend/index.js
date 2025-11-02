@@ -1,17 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+require("dotenv").config(); // ✅ Load .env file
 
 const app = express();
-const PORT =process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 // ✅ Middleware
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 
-// ✅ Connect to MongoDB
+// ✅ MongoDB Connection (Local or Atlas)
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb://localhost:27017/face_attendance";
+
 mongoose
-  .connect("mongodb://localhost:27017/face_attendance", {
+  .connect(MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -43,7 +47,6 @@ app.post("/api/students/register-face", async (req, res) => {
     if (!studentId || !descriptor)
       return res.status(400).json({ message: "⚠️ Invalid data provided." });
 
-    // Check if student ID already exists
     const existingStudent = await Student.findOne({ studentId });
     if (existingStudent)
       return res
@@ -52,7 +55,7 @@ app.post("/api/students/register-face", async (req, res) => {
 
     // Prevent duplicate faces with different IDs
     const students = await Student.find();
-    const threshold = 0.55; // lower = stricter match
+    const threshold = 0.55;
     for (const s of students) {
       const distance = Math.sqrt(
         s.descriptor.reduce((sum, val, i) => sum + (val - descriptor[i]) ** 2, 0)
@@ -64,7 +67,6 @@ app.post("/api/students/register-face", async (req, res) => {
       }
     }
 
-    // Save new student if unique
     const newStudent = new Student({ studentId, descriptor });
     await newStudent.save();
 
@@ -85,9 +87,8 @@ app.post("/api/attendance/mark-by-face", async (req, res) => {
     const students = await Student.find();
     let matchedStudent = null;
     let minDistance = Infinity;
-    const threshold = 0.55; // Face match sensitivity
+    const threshold = 0.55;
 
-    // Find closest matching face descriptor
     for (const s of students) {
       const distance = Math.sqrt(
         s.descriptor.reduce((sum, val, i) => sum + (val - descriptor[i]) ** 2, 0)
@@ -98,11 +99,9 @@ app.post("/api/attendance/mark-by-face", async (req, res) => {
       }
     }
 
-    // If no match found
     if (!matchedStudent)
       return res.status(404).json({ message: "❌ No matching face found." });
 
-    // Check if attendance already marked for today
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
@@ -118,7 +117,6 @@ app.post("/api/attendance/mark-by-face", async (req, res) => {
       });
     }
 
-    // Save new attendance record
     await new Attendance({ studentId: matchedStudent }).save();
 
     res.json({

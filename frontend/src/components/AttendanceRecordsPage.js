@@ -8,7 +8,9 @@ export default function AttendanceRecordsPage() {
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/attendance");
+        const res = await axios.get(
+          "https://student-face-attendance-system.onrender.com/api/attendance"
+        );
         setRecords(res.data);
       } catch (err) {
         console.error("❌ Error fetching attendance:", err);
@@ -20,11 +22,19 @@ export default function AttendanceRecordsPage() {
   }, []);
 
   if (loading) {
-    return <p style={{ textAlign: "center", marginTop: "40px" }}>Loading attendance records...</p>;
+    return (
+      <p style={{ textAlign: "center", marginTop: "40px" }}>
+        Loading attendance records...
+      </p>
+    );
   }
 
   if (!records.length) {
-    return <p style={{ textAlign: "center", marginTop: "40px" }}>No attendance records found.</p>;
+    return (
+      <p style={{ textAlign: "center", marginTop: "40px" }}>
+        No attendance records found.
+      </p>
+    );
   }
 
   return (
@@ -40,9 +50,14 @@ export default function AttendanceRecordsPage() {
         </thead>
         <tbody>
           {records.map((r, i) => (
-            <tr key={i} style={{ backgroundColor: i % 2 === 0 ? "#f9f9f9" : "#fff" }}>
+            <tr
+              key={i}
+              style={{
+                backgroundColor: i % 2 === 0 ? "#f9f9f9" : "#fff",
+              }}
+            >
               <td>{r.studentId}</td>
-              <td>{new Date(r.date).toISOString().split("T")[0]}</td>
+              <td>{r.date}</td>
               <td>{r.status}</td>
             </tr>
           ))}
